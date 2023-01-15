@@ -16,9 +16,6 @@
       ]
     }
   ],
-  "omnibox": {
-    "keyword": "nt"
-  },
   "action": {
     "default_icon": {
       "16": "assets/newtab_search16.png",
