@@ -4,21 +4,31 @@
   "version": "1.0",
   "manifest_version": 3,
   "background": {
-      "service_worker": "background.ts"
+    "service_worker": "background.ts"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content-scripts/content.ts"
+      ]
+    }
+  ],
   "omnibox": {
-      "keyword": "nt"
+    "keyword": "nt"
   },
   "action": {
-      "default_icon": {
-          "16": "assets/newtab_search16.png",
-          "32": "assets/newtab_search32.png"
-      }
+    "default_icon": {
+      "16": "assets/newtab_search16.png",
+      "32": "assets/newtab_search32.png"
+    }
   },
   "icons": {
-      "16": "assets/newtab_search16.png",
-      "32": "assets/newtab_search32.png",
-      "48": "assets/newtab_search48.png",
-      "128": "assets/newtab_search128.png"
+    "16": "assets/newtab_search16.png",
+    "32": "assets/newtab_search32.png",
+    "48": "assets/newtab_search48.png",
+    "128": "assets/newtab_search128.png"
   }
 }
