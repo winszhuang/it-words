@@ -1,7 +1,7 @@
 {
-  "name": "Omnibox - New Tab Search",
-  "description": "Type 'nt' plus a search term into the Omnibox to open search in new tab.",
-  "version": "1.0",
+  "name": "it-words",
+  "description": "learn english in better way",
+  "version": "0.0.1",
   "manifest_version": 3,
   "background": {
     "service_worker": "background.ts"
