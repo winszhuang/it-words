@@ -30,16 +30,10 @@ document.addEventListener('click', (e) => {
 })
 
 button.onClick(() => {
-  saveNewWordToLs(currentWord.trim())
-  button.hide()
-  currentWord = ''
+  chrome.runtime.sendMessage(currentWord, (res) => {
+    if (res.success) {
+      button.hide()
+      currentWord = ''
+    }
+  })
 })
-
-function saveNewWordToLs (word: string) {
-  const source = localStorage.getItem('words')
-  const words: string[] = JSON.parse(source!) ?? []
-  if (!words.includes(word)) {
-    words.push(word)
-    localStorage.setItem('words', JSON.stringify(words))
-  }
-}
