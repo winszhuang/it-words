@@ -1,20 +1,31 @@
+import { Message } from './types/type'
+
 const wordList = new Set<string>()
 
-chrome.runtime.onMessage.addListener((message, sender, senderResponse) => {
-  wordList.add(message)
-  senderResponse({ success: true })
+chrome.runtime.onMessage.addListener((message: Message, sender, senderResponse) => {
+  console.log(message)
+  switch (message.event) {
+    case 'add-word':
+      wordList.add(message.data)
+      senderResponse({ success: true, data: Array.from(wordList) })
+      break
+    case 'get-all-words':
+      senderResponse({ success: true, data: Array.from(wordList) })
+      break
+    default:
+  }
   // 此處資料將會在瀏覽器關閉後消失
   // 可以在自己儲存至某個資料庫裏面(自己寫api)
 })
 
 // Extension event listeners are a little different from the patterns you may have seen in DOM or
 // Node.js APIs. The below event listener registration can be broken in to 4 distinct parts:
-//
+
 // * chrome      - the global namespace for Chrome's extension APIs
 // * runtime     – the namespace of the specific API we want to use
 // * onInstalled - the event we want to subscribe to
 // * addListener - what we want to do with this event
-//
+
 // See https://developer.chrome.com/docs/extensions/reference/events/ for additional details.
 // chrome.runtime.onInstalled.addListener(async () => {
 //   // While we could have used `let url = "hello.html"`, using runtime.getURL is a bit more robust as

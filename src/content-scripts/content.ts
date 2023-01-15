@@ -30,10 +30,17 @@ document.addEventListener('click', (e) => {
 })
 
 button.onClick(() => {
-  chrome.runtime.sendMessage(currentWord, (res) => {
-    if (res.success) {
-      button.hide()
-      currentWord = ''
-    }
-  })
+  chrome.runtime.sendMessage(
+    {
+      event: 'add-word',
+      data: currentWord
+    },
+    (res) => {
+      if (res.success) {
+        console.log('新增單字成功')
+        console.log(res.data)
+        button.hide()
+        currentWord = ''
+      }
+    })
 })

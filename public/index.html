@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>test</title>
+</head>
+
+<body>
+  <div>
+    chrome
+  </div>
+  <button id="button">
+    取得所有單字
+  </button>
+  <script>
+    const button = document.getElementById('button')
+    button.addEventListener('click', (e) => {
+      // 你發現在一般網站沒辦法使用chrome.runtime的api
+      // 所以在該網站你就必須call api
+      chrome.runtime.sendMessage('need words', (res) => {
+        if (res.success) {
+          console.log(res)
+        }
+      })
+    })
+    
+  </script>
+</body>
+
+</html>
