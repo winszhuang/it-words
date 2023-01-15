@@ -33,7 +33,7 @@ button.onClick(() => {
   chrome.runtime.sendMessage(
     {
       event: 'add-word',
-      data: currentWord
+      data: currentWord.trim()
     },
     (res) => {
       if (res.success) {
