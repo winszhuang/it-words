@@ -6,6 +6,7 @@ export class Button {
     this.el.innerHTML = text
     this.el.style.position = absolute ? 'absolute' : 'relative'
     this.el.style.backgroundColor = 'white'
+    this.hide()
   }
 
   public setPosition (x: number, y: number) {

@@ -18,6 +18,20 @@ chrome.runtime.onMessage.addListener((message: Message, sender, senderResponse) 
   // 可以在自己儲存至某個資料庫裏面(自己寫api)
 })
 
+// 監聽某個tab被點擊之後，關閉當前的dialog
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  chrome.tabs.sendMessage(
+    activeInfo.tabId,
+    {
+      event: 'show-option-dialog',
+      data: false
+    }
+  )
+  // chrome.tabs.get(activeInfo.tabId, (tab) => {
+
+  // })
+})
+
 // Extension event listeners are a little different from the patterns you may have seen in DOM or
 // Node.js APIs. The below event listener registration can be broken in to 4 distinct parts:
 
