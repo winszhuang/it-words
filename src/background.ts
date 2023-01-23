@@ -1,5 +1,7 @@
 import { Message } from './types/type'
+import { translate } from './utils/translate'
 
+// (window as any).global = window
 const wordList = new Set<string>()
 
 chrome.runtime.onMessage.addListener((message: Message, sender, senderResponse) => {
@@ -19,7 +21,8 @@ chrome.runtime.onMessage.addListener((message: Message, sender, senderResponse) 
 })
 
 // 監聽某個tab被點擊之後，關閉當前的dialog
-chrome.tabs.onActivated.addListener((activeInfo) => {
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  console.log('-----------------------')
   chrome.tabs.sendMessage(
     activeInfo.tabId,
     {
@@ -27,6 +30,10 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
       data: false
     }
   )
+
+  const { text } = await translate('Привет, мир! Как дела?', { to: 'en' })
+
+  console.log(text) // => 'Hello World! How are you?'
   // chrome.tabs.get(activeInfo.tabId, (tab) => {
 
   // })

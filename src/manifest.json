@@ -3,6 +3,9 @@
   "description": "learn english in better way",
   "version": "0.0.1",
   "manifest_version": 3,
+  "host_permissions": [
+    "https://translate.google.com/"
+  ],
   "background": {
     "service_worker": "background.ts"
   },
