@@ -1,4 +1,5 @@
 import { Message } from './types/type'
+import { translate } from './utils/google-translate'
 
 const wordList = new Set<string>()
 
@@ -19,7 +20,7 @@ chrome.runtime.onMessage.addListener((message: Message, sender, senderResponse) 
 })
 
 // 監聽某個tab被點擊之後，關閉當前的dialog
-chrome.tabs.onActivated.addListener((activeInfo) => {
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
   chrome.tabs.sendMessage(
     activeInfo.tabId,
     {
@@ -27,6 +28,8 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
       data: false
     }
   )
+  const data = await translate({ text: 'preserves' })
+  console.log(data)
   // chrome.tabs.get(activeInfo.tabId, (tab) => {
 
   // })
