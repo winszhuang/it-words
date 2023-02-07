@@ -10,7 +10,7 @@ let currentWord: string = ''
 const button = new Button('儲存')
 const dialog = new Dialog('我是dialog')
 
-document.addEventListener('dblclick', (e) => {
+document.addEventListener('mouseup', (e) => {
   currentWord = window?.getSelection()?.toString() || ''
   if (currentWord) {
     button.show()
