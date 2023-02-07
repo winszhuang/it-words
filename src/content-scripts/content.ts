@@ -11,7 +11,7 @@ const button = new Button('儲存')
 const dialog = new Dialog('我是dialog')
 
 document.addEventListener('mouseup', (e) => {
-  currentWord = window?.getSelection()?.toString() || ''
+  currentWord = getSectionWord()
   if (currentWord) {
     button.show()
     button.setPosition(
@@ -22,12 +22,9 @@ document.addEventListener('mouseup', (e) => {
 })
 
 document.addEventListener('click', (e) => {
-  const target = e.target as HTMLElement
-
-  if (!currentWord) return
-
-  // 點在button外面且當前有文字被選中
-  if (!button.getEl().contains(target)) {
+  currentWord = getSectionWord()
+  if (!currentWord) {
+    currentWord = ''
     button.hide()
   }
 })
@@ -64,3 +61,7 @@ chrome.runtime.onMessage.addListener((message: Message, sender, senderResponse) 
   // 此處資料將會在瀏覽器關閉後消失
   // 可以在自己儲存至某個資料庫裏面(自己寫api)
 })
+
+function getSectionWord () {
+  return window?.getSelection()?.toString() || ''
+}
