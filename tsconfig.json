@@ -9,7 +9,8 @@
       "esModuleInterop": true,
       "lib": [
           "esnext",
-          "dom"
+          "dom",
+          "DOM.Iterable"
       ],
       "importHelpers": true,
       "removeComments": true,
