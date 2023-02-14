@@ -3,9 +3,8 @@ import { buildHighlightedWordEl } from '@/utils/scan-words'
 import { Button } from './button'
 import { Dialog } from './dialog'
 import { TranslatePopup } from './translate-popup'
-import { Underline } from './underline'
 
-addTailwindCssInThisWeb()
+// addTailwindCssInThisWeb()
 
 const defaultXOffset = 40
 const defaultYOffset = 20
@@ -14,21 +13,12 @@ let currentWord: string = ''
 
 const button = new Button('儲存')
 const dialog = new Dialog('我是dialog')
-const underline = new Underline()
 
 const translatePopup = new TranslatePopup(document.body)
 
 document.addEventListener('mouseup', (e) => {
   currentWord = getSectionWord()
   if (currentWord) {
-    const rect = getSectionRect()
-    if (rect) {
-      const { left, bottom, width } = rect
-      underline.setPosition(left, window.pageYOffset + bottom)
-      underline.show()
-      underline.setWidth(width)
-      console.log('show')
-    }
     button.show()
     button.setPosition(
       e.clientX + defaultXOffset,
@@ -83,17 +73,4 @@ chrome.runtime.onMessage.addListener((message: Message, sender, senderResponse) 
 
 function getSectionWord () {
   return window?.getSelection()?.toString() || ''
-}
-
-function getSectionRect () {
-  const range = window.getSelection()?.getRangeAt(0)
-  if (range) {
-    return range.getBoundingClientRect()
-  }
-}
-
-function addTailwindCssInThisWeb () {
-  const script = document.createElement('script')
-  script.setAttribute('src', 'https://cdn.tailwindcss.com')
-  document.head.appendChild(script)
 }
