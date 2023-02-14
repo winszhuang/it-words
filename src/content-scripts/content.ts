@@ -1,6 +1,10 @@
 import { Message } from '@/types/type'
+import { buildHighlightedWordEl } from '@/utils/scan-words'
 import { Button } from './button'
 import { Dialog } from './dialog'
+import { TranslatePopup } from './translate-popup'
+
+// addTailwindCssInThisWeb()
 
 const defaultXOffset = 40
 const defaultYOffset = 20
@@ -9,6 +13,8 @@ let currentWord: string = ''
 
 const button = new Button('儲存')
 const dialog = new Dialog('我是dialog')
+
+const translatePopup = new TranslatePopup(document.body)
 
 document.addEventListener('mouseup', (e) => {
   currentWord = getSectionWord()
@@ -30,6 +36,9 @@ document.addEventListener('click', (e) => {
 })
 
 button.onClick(() => {
+  translatePopup.show()
+  buildHighlightedWordEl(currentWord.trim())
+  console.log('123')
   chrome.runtime.sendMessage(
     {
       event: 'add-word',
