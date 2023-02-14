@@ -1,3 +1,4 @@
+import { ElementBuilder } from './element-builder'
 import { translate } from './google-translate'
 import { generateRandomId, getAbsoluteCoords } from './helper'
 
@@ -28,8 +29,8 @@ export function buildHighlightedWordEl (text: string) {
         const span = document.createElement('span')
         span.setAttribute(SIGN, `word:${nodeText}`)
         span.style.borderBottom = '1px solid red'
-        span.addEventListener('mouseenter', (e) => showTranslate(span, text, id))
-        span.addEventListener('mouseleave', (e) => hideTranslate(text, id))
+        span.addEventListener('mouseenter', (e) => showPopup(span, text, id))
+        span.addEventListener('mouseleave', (e) => hidePopup(text, id))
         span.appendChild(range.extractContents())
         range.insertNode(span)
 
@@ -43,69 +44,59 @@ export function buildHighlightedWordEl (text: string) {
   }
 }
 
-async function showTranslate (el: HTMLElement, text: string, id: string) {
-  console.log(`enter ${id}`)
-  const tooltip = document.createElement('div')
-  tooltip.setAttribute('data-translate', `${text} $ ${id}`)
-  tooltip.style.boxShadow = 'rgba(0, 0, 0, 0.24) 0px 3px 8px'
-  tooltip.style.padding = '4px'
-  tooltip.style.backgroundColor = 'white'
-
-  try {
-    const translationData = await translate({ text })
-    if (translationData) {
-      const { detailed = [], result = [] } = translationData
-      const resultUl = document.createElement('ul')
-      resultUl.style.listStyle = 'none'
-      resultUl.style.fontWeight = 'bold'
-      resultUl.style.fontSize = '1.2rem'
-
-      result.forEach(value => {
-        const li = document.createElement('li')
-        li.innerText = value
-        resultUl.appendChild(li)
-      })
-      const detailedUl = document.createElement('ul')
-      detailedUl.style.listStyle = 'none'
-      detailed.forEach(value => {
-        const li = document.createElement('li')
-        li.innerText = value
-        detailedUl.appendChild(li)
-      })
-
-      tooltip.appendChild(resultUl)
-      tooltip.appendChild(document.createElement('hr'))
-      tooltip.appendChild(detailedUl)
-    }
-
-    // 掛載
-    const { x, y } = getAbsoluteCoords(el)
-    const fixedWall = document.createElement('div')
-    fixedWall.style.position = 'fixed'
-    fixedWall.style.zIndex = '999'
-    fixedWall.style.left = `${x + -1 * scrollX}px`
-    fixedWall.style.top = `${y + el.getBoundingClientRect().height + -1 * scrollY}px`
-    document.body.appendChild(fixedWall)
-    fixedWall.appendChild(tooltip)
-
-    document.addEventListener('scroll', () => {
-      fixedWall.style.top = `${y + el.getBoundingClientRect().height + -1 * scrollY}px`
-      fixedWall.style.left = `${x + -1 * scrollX}px`
-    })
-  } catch (error) {
-    console.log((error as Error).message)
+async function showPopup (el: HTMLElement, text: string, id: string) {
+  const translationData = await translate({ text })
+  if (!translationData) {
+    alert('fail to get translate data!!')
+    return
   }
+
+  const { detailed = [], result = [] } = translationData
+  const resultUl = new ElementBuilder('ul')
+    .style('listStyle', 'none')
+    .style('fontWeight', 'bold')
+    .style('fontSize', '1.2rem')
+    .appendChildEach(result, (str) => {
+      const li = document.createElement('li')
+      li.innerText = str
+      return li
+    })
+    .getEl()
+
+  const detailedUl = new ElementBuilder('ul')
+    .style('listStyle', 'none')
+    .appendChildEach(detailed, (str) => {
+      const li = document.createElement('li')
+      li.innerText = str
+      return li
+    })
+    .getEl()
+
+  const tooltip = new ElementBuilder('div')
+    .attribute('data-translate', generateDataTranslateValue(text, id))
+    .style('position', 'fixed')
+    .style('boxShadow', 'rgba(0, 0, 0, 0.24) 0px 3px 8px')
+    .style('padding', '4px')
+    .style('backgroundColor', 'white')
+    .appendChild(resultUl)
+    .appendChild(document.createElement('hr'))
+    .appendChild(detailedUl)
+    .dependsOn(document.body)
+    .getEl()
+
+  const { x, y } = getAbsoluteCoords(el)
+  updateLocate(tooltip, x, y + el.getBoundingClientRect().height)
+
+  document.addEventListener('scroll', () =>
+    updateLocate(tooltip, x, y + el.getBoundingClientRect().height))
 }
 
-function hideTranslate (text: string, id: string) {
-  console.log(`leave ${id}`)
+function hidePopup (text: string, id: string) {
   const elList = document.querySelectorAll(`[data-translate="${text} $ ${id}"]`)
-  if (elList.length && elList[0].parentElement) {
+  if (elList.length) {
     elList.forEach(el => {
-      el.parentElement?.remove()
+      el.remove()
     })
-  } else {
-    console.warn(`cant find ${text} $ ${id} el!!`)
   }
 }
 
@@ -123,4 +114,13 @@ function getTextNodesIn (node: Node) {
   }
 
   return textNodes
+}
+
+function updateLocate (el: HTMLElement, x: number, y: number) {
+  el.style.top = `${y + -1 * scrollY}px`
+  el.style.left = `${x + -1 * scrollX}px`
+}
+
+function generateDataTranslateValue (text: string, id: string) {
+  return `${text} $ ${id}`
 }
