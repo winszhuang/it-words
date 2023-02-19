@@ -11,6 +11,11 @@ chrome.storage.local.onChanged.addListener(async (change) => {
         data: isHighlight
       })
     })
+  } else if (change.words) {
+    chrome.runtime.sendMessage({
+      event: 'update-word',
+      data: true
+    })
   }
 })
 

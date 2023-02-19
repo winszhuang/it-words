@@ -1,14 +1,23 @@
 import { getWordsData, isActiveTabShouldHighlightWord, setIsHighlight } from '@/utils/chrome/storage'
+import { Message } from '@/types/type'
 
+const wordsArea = document.getElementById('wordsArea')
 const goPageButton = document.getElementById('goPage')
 const exportWordButton = document.getElementById('exportWord')
 const toggleHighlightCheckbox = document.getElementById('toggleHighlight') as HTMLInputElement
 
 initCheckboxState().catch(console.error)
+renderRecentlyWords().catch(console.error)
 
 goPageButton?.addEventListener('click', () => goPage().catch(console.error))
 exportWordButton?.addEventListener('click', () => downloadWordsJson().catch(console.error))
 toggleHighlightCheckbox?.addEventListener('change', (e) => onToggleCheckbox(e).catch(console.error))
+
+chrome.runtime.onMessage.addListener((message: Message) => {
+  if (message.event === 'update-word') {
+    renderRecentlyWords().catch(console.error)
+  }
+})
 
 async function goPage () {
   await chrome.tabs.create({ url: 'http://jzlin-blog.logdown.com/posts/154248-chrome-extension-advanced-cors' })
@@ -30,6 +39,18 @@ async function onToggleCheckbox (e: Event) {
 
 async function initCheckboxState () {
   toggleHighlightCheckbox.checked = await isActiveTabShouldHighlightWord()
+}
+
+async function renderRecentlyWords () {
+  wordsArea!.innerHTML = ''
+  const ul = document.createElement('ol')
+  const words = (await getWordsData()).reverse().slice(0, 10)
+  words.forEach(word => {
+    const li = document.createElement('li')
+    li.innerText = word.text
+    ul.appendChild(li)
+  })
+  wordsArea?.appendChild(ul)
 }
 
 function download (content: string, fileName: string, contentType: string) {
