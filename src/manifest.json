@@ -6,6 +6,10 @@
   "background": {
     "service_worker": "background.ts"
   },
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
   "content_scripts": [
     {
       "matches": [

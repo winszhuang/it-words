@@ -1,10 +1,11 @@
 import { ElementBuilder } from './element-builder'
-import { translate } from './google-translate'
+import { TranslateResult } from './google-translate'
 import { generateRandomId, getAbsoluteCoords } from './helper'
 
 const SIGN = 'data-word'
 
-export function buildHighlightedWordEl (text: string) {
+export function buildHighlightedWordEl (data: TranslateResult) {
+  let { text } = data
   const textNodes = getTextNodesIn(document.body)
   text = text.toLowerCase()
   // 接著遍歷所有文字節點，看哪些節點的文字中有包含 "vue" 字樣
@@ -29,7 +30,7 @@ export function buildHighlightedWordEl (text: string) {
         const span = document.createElement('span')
         span.setAttribute(SIGN, `word:${nodeText}`)
         span.style.borderBottom = '1px solid red'
-        span.addEventListener('mouseenter', (e) => showPopup(span, text, id))
+        span.addEventListener('mouseenter', (e) => showPopup(span, data, id))
         span.addEventListener('mouseleave', (e) => hidePopup(text, id))
         span.appendChild(range.extractContents())
         range.insertNode(span)
@@ -44,18 +45,14 @@ export function buildHighlightedWordEl (text: string) {
   }
 }
 
-async function showPopup (el: HTMLElement, text: string, id: string) {
-  const translationData = await translate({ text })
-  if (!translationData) {
-    alert('fail to get translate data!!')
-    return
-  }
-
-  const { detailed = [], result = [] } = translationData
+async function showPopup (el: HTMLElement, translationData: TranslateResult, id: string) {
+  const { detailed = [], result = [], text } = translationData
   const resultUl = new ElementBuilder('ul')
     .style('listStyle', 'none')
     .style('fontWeight', 'bold')
     .style('fontSize', '1.2rem')
+    .style('margin', '0')
+    .style('padding', '0')
     .appendChildEach(result, (str) => {
       const li = document.createElement('li')
       li.innerText = str
@@ -65,6 +62,8 @@ async function showPopup (el: HTMLElement, text: string, id: string) {
 
   const detailedUl = new ElementBuilder('ul')
     .style('listStyle', 'none')
+    .style('margin', '0')
+    .style('padding', '0')
     .appendChildEach(detailed, (str) => {
       const li = document.createElement('li')
       li.innerText = str
