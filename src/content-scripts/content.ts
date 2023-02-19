@@ -1,10 +1,8 @@
 import { Message } from '@/types/type'
+import { getIsHighlight, getWordsData, pushWordData } from '@/utils/chrome/storage'
+import { translate } from '@/utils/google-translate'
 import { buildHighlightedWordEl } from '@/utils/scan-words'
 import { Button } from './button'
-import { Dialog } from './dialog'
-import { TranslatePopup } from './translate-popup'
-
-// addTailwindCssInThisWeb()
 
 const defaultXOffset = 40
 const defaultYOffset = 20
@@ -12,13 +10,11 @@ const defaultYOffset = 20
 let currentWord: string = ''
 
 const button = new Button('儲存')
-const dialog = new Dialog('我是dialog')
-
-const translatePopup = new TranslatePopup(document.body)
 
 document.addEventListener('mouseup', (e) => {
   currentWord = getSectionWord()
   if (currentWord) {
+    currentWord = currentWord.trim()
     button.show()
     button.setPosition(
       e.clientX + defaultXOffset,
@@ -35,42 +31,70 @@ document.addEventListener('click', (e) => {
   }
 })
 
-button.onClick(() => {
-  translatePopup.show()
-  buildHighlightedWordEl(currentWord.trim())
-  console.log('123')
-  chrome.runtime.sendMessage(
-    {
-      event: 'add-word',
-      data: currentWord.trim()
-    },
-    (res) => {
-      if (res.success) {
-        console.log('新增單字成功')
-        console.log(res.data)
-        button.hide()
-        currentWord = ''
-      }
-    })
+button.onClick(async () => {
+  const translationData = await translate({ text: currentWord })
+  if (!translationData) {
+    alert('fail to get translate data!!')
+    return
+  }
+
+  await pushWordData(translationData)
+  buildHighlightedWordEl(translationData)
 })
 
-chrome.runtime.onMessage.addListener((message: Message, sender, senderResponse) => {
-  console.log(message)
-  switch (message.event) {
-    case 'show-option-dialog':
-      if (message.data) {
-        dialog.show()
-        console.log('dialog顯示瞜')
-      } else {
-        dialog.hide()
-      }
-      break
-    default:
+chrome.runtime.onMessage.addListener(async (message: Message, sender, senderResponse) => {
+  if (message.event === 'highlight-words') {
+    const isHighlight = message.data
+    if (isHighlight) {
+      await highlightAllWords()
+    } else {
+      unHighlightAllWords()
+    }
   }
-  // 此處資料將會在瀏覽器關閉後消失
-  // 可以在自己儲存至某個資料庫裏面(自己寫api)
 })
 
 function getSectionWord () {
   return window?.getSelection()?.toString() || ''
 }
+
+async function init () {
+  const id = await initTabId()
+
+  const shouldHighlightWords = await getIsHighlight(id!)
+  if (shouldHighlightWords) {
+    await highlightAllWords()
+  } else {
+    unHighlightAllWords()
+  }
+}
+
+async function initTabId (): Promise<number | undefined> {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.onMessage.addListener(callback)
+
+    function callback (message: Message) {
+      if (message.event === 'get-tab-id') {
+        chrome.runtime.onMessage.removeListener(callback)
+        resolve(message.data)
+      }
+    }
+  })
+}
+
+async function highlightAllWords () {
+  const words = await getWordsData()
+  words.forEach((wordData) => {
+    buildHighlightedWordEl(wordData)
+  })
+}
+
+function unHighlightAllWords () {
+  const nodeList = document.querySelectorAll('[data-word]')
+  nodeList.forEach(node => {
+    const newNode = document.createTextNode(node.textContent || node.innerHTML)
+
+    node.parentElement?.replaceChild(newNode, node)
+  })
+}
+
+init().catch(console.error)

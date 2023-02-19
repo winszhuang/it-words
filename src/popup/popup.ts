@@ -1,45 +1,35 @@
+import { getWordsData, isActiveTabShouldHighlightWord, setIsHighlight } from '@/utils/chrome/storage'
+
 const goPageButton = document.getElementById('goPage')
-const onTimeSettingButton = document.getElementById('onTimeSetting')
 const exportWordButton = document.getElementById('exportWord')
+const toggleHighlightCheckbox = document.getElementById('toggleHighlight') as HTMLInputElement
 
-goPageButton?.addEventListener('click', (e) => {
-  goPage()
-})
+initCheckboxState().catch(console.error)
 
-onTimeSettingButton?.addEventListener('click', (e) => {
-  // 發訊息給content-script
-  // 呼叫content打開dialog，顯示設定窗
-  // active: true 表示只取當前的tab，所以tabs會只有一個元素
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    const currentTab = tabs[0]
-    chrome.tabs.sendMessage(
-      currentTab.id!,
-      {
-        event: 'show-option-dialog',
-        data: true
-      },
-      (res) => {
-        console.log(res)
-      }
-    )
-  })
-})
-
-exportWordButton?.addEventListener('click', (e) => {
-  chrome.runtime.sendMessage(
-    {
-      event: 'get-all-words'
-    },
-    (res) => {
-      const wordList = res.data as string[]
-      // 下載至本地
-      download(JSON.stringify(wordList), `${Date.now().toString()}.json`, 'application/json')
-    })
-})
+goPageButton?.addEventListener('click', () => goPage().catch(console.error))
+exportWordButton?.addEventListener('click', () => downloadWordsJson().catch(console.error))
+toggleHighlightCheckbox?.addEventListener('change', (e) => onToggleCheckbox(e).catch(console.error))
 
 async function goPage () {
-  // const url = chrome.runtime.getURL('../index.html')
-  await chrome.tabs.create({ url: 'http://localhost:8080/index.html' })
+  await chrome.tabs.create({ url: 'http://jzlin-blog.logdown.com/posts/154248-chrome-extension-advanced-cors' })
+}
+
+async function downloadWordsJson () {
+  const words = await getWordsData()
+  console.log(words)
+  // 下載至本地
+  download(JSON.stringify(words), `${Date.now().toString()}.json`, 'application/json')
+}
+
+async function onToggleCheckbox (e: Event) {
+  // active: true 表示只取當前的tab，所以tabs會只有一個元素
+  const isChecked = (e.target as any).checked
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+  await setIsHighlight(tab.id!, isChecked)
+}
+
+async function initCheckboxState () {
+  toggleHighlightCheckbox.checked = await isActiveTabShouldHighlightWord()
 }
 
 function download (content: string, fileName: string, contentType: string) {

@@ -1,39 +1,33 @@
-import { Message } from './types/type'
-import { translate } from './utils/google-translate'
-
-const wordList = new Set<string>()
-
-chrome.runtime.onMessage.addListener((message: Message, sender, senderResponse) => {
-  console.log(message)
-  switch (message.event) {
-    case 'add-word':
-      wordList.add(message.data)
-      senderResponse({ success: true, data: Array.from(wordList) })
-      break
-    case 'get-all-words':
-      senderResponse({ success: true, data: Array.from(wordList) })
-      break
-    default:
+chrome.storage.local.onChanged.addListener(async (change) => {
+  // use for testing
+  console.log('此次storage的更新 : ')
+  console.log(change)
+  console.log('此次storage的更新 ---')
+  if (change.highlight) {
+    const highlightRecord = change.highlight.newValue as Record<number, boolean>
+    Object.entries(highlightRecord).forEach(([tabId, isHighlight]) => {
+      chrome.tabs.sendMessage(Number(tabId), {
+        event: 'highlight-words',
+        data: isHighlight
+      })
+    })
   }
-  // 此處資料將會在瀏覽器關閉後消失
-  // 可以在自己儲存至某個資料庫裏面(自己寫api)
 })
 
-// 監聽某個tab被點擊之後，關閉當前的dialog
-chrome.tabs.onActivated.addListener(async (activeInfo) => {
-  chrome.tabs.sendMessage(
-    activeInfo.tabId,
-    {
-      event: 'show-option-dialog',
-      data: false
-    }
-  )
-  const data = await translate({ text: 'preserves' })
-  console.log(data)
-  // chrome.tabs.get(activeInfo.tabId, (tab) => {
-
-  // })
+chrome.tabs.onCreated.addListener((tab) => {
+  sendTabIdToContent(tab.id!)
 })
+
+chrome.tabs.onUpdated.addListener((tabId) => {
+  sendTabIdToContent(tabId)
+})
+
+function sendTabIdToContent (id: number) {
+  chrome.tabs.sendMessage(id, {
+    event: 'get-tab-id',
+    data: id
+  })
+}
 
 // Extension event listeners are a little different from the patterns you may have seen in DOM or
 // Node.js APIs. The below event listener registration can be broken in to 4 distinct parts:

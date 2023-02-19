@@ -5,11 +5,13 @@
   "scripts": {
     "build": "vite build"
   },
-  "keywords": ["chrome-extension"],
+  "keywords": [
+    "chrome-extension"
+  ],
   "author": "wins",
   "license": "ISC",
   "devDependencies": {
-    "@types/chrome": "^0.0.134",
+    "@types/chrome": "^0.0.213",
     "@types/node": "^18.11.18",
     "@typescript-eslint/eslint-plugin": "^5.48.1",
     "@typescript-eslint/parser": "^5.48.1",
