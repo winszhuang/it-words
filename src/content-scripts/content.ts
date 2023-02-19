@@ -89,10 +89,11 @@ async function highlightAllWords () {
 }
 
 function unHighlightAllWords () {
-  const elList = document.querySelectorAll('[data-word]')
-  elList.forEach(el => {
-    (el as HTMLSpanElement).removeAttribute('[data-word]')
-    el.removeAttribute('style')
+  const nodeList = document.querySelectorAll('[data-word]')
+  nodeList.forEach(node => {
+    const newNode = document.createTextNode(node.textContent || node.innerHTML)
+
+    node.parentElement?.replaceChild(newNode, node)
   })
 }
 
