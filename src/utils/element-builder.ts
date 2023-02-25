@@ -18,6 +18,11 @@ export class ElementBuilder {
     return this
   }
 
+  text (text: string) {
+    this.el.innerText = text
+    return this
+  }
+
   dependsOn (el: HTMLElement) {
     el.appendChild(this.el)
     return this

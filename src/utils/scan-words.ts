@@ -1,3 +1,5 @@
+import { DataSetKey } from '@/enum'
+import { deleteWordData } from './chrome/storage'
 import { ElementBuilder } from './element-builder'
 import { TranslateResult } from './google-translate'
 import { generateRandomId, getAbsoluteCoords } from './helper'
@@ -9,7 +11,6 @@ interface HoverOptions {
   word?: boolean
 }
 
-const SIGN = 'data-word'
 /** 公差。確保說滑鼠從下划紅線移動到翻譯字卡可以順利讓翻譯字卡不會消失 */
 const TOLERANCE = 5
 const hoverState: Record<string, HoverOptions> = {}
@@ -38,7 +39,7 @@ export function buildHighlightedWordEl (data: TranslateResult) {
         range.setEnd(node, startIndex + text.length)
 
         const span = document.createElement('span')
-        span.setAttribute(SIGN, `word:${nodeText}`)
+        span.setAttribute(DataSetKey.word, generateDataTranslateValue(text, id))
         span.style.borderBottom = '1px solid red'
         span.addEventListener('mouseenter', () => {
           updateHoverState(id, { word: true })
@@ -64,10 +65,15 @@ export function buildHighlightedWordEl (data: TranslateResult) {
 async function showTooltip (el: HTMLElement, translationData: TranslateResult, id: string) {
   const { detailed = [], result = [], text } = translationData
 
-  const existElList = document.querySelectorAll(`[data-translate="${text} $ ${id}"]`)
+  const existElList = document.querySelectorAll(`[${DataSetKey.translate}="${text} $ ${id}"]`)
   if (existElList.length) {
     return
   }
+
+  const deleteWordButton = new ElementBuilder('button')
+    .attribute(DataSetKey.translateDelete, id)
+    .text('刪除')
+    .getEl()
 
   const resultUl = new ElementBuilder('ul')
     .style('listStyle', 'none')
@@ -100,10 +106,12 @@ async function showTooltip (el: HTMLElement, translationData: TranslateResult, i
     .appendChild(resultUl)
     .appendChild(document.createElement('hr'))
     .appendChild(detailedUl)
+    .appendChild(document.createElement('hr'))
+    .appendChild(deleteWordButton)
     .getEl()
 
   const tooltipContainer = new ElementBuilder('div')
-    .attribute('data-translate', generateDataTranslateValue(text, id))
+    .attribute(DataSetKey.translate, generateDataTranslateValue(text, id))
     .style('position', 'fixed')
     .style('paddingTop', `${TOLERANCE}px`)
     .dependsOn(document.body)
@@ -117,6 +125,9 @@ async function showTooltip (el: HTMLElement, translationData: TranslateResult, i
     updateHoverState(id, { translate: false })
     hideTooltip(text, id)
   })
+  deleteWordButton.addEventListener('click', () => {
+    deleteWordData(text)
+  })
 
   const { x, y } = getAbsoluteCoords(el)
   // 讓高度減掉公差，確保滑鼠還沒移出紅線單字前可以正常過度到翻譯字卡
@@ -127,7 +138,7 @@ async function showTooltip (el: HTMLElement, translationData: TranslateResult, i
 }
 
 function hideTooltip (text: string, id: string) {
-  const elList = document.querySelectorAll(`[data-translate="${text} $ ${id}"]`)
+  const elList = document.querySelectorAll(`[${DataSetKey.translate}="${text} $ ${id}"]`)
   if (!elList.length) return
 
   const shouldNotBeHidden = hoverState[id]?.translate || hoverState[id]?.word

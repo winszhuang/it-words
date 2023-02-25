@@ -14,7 +14,7 @@ exportWordButton?.addEventListener('click', () => downloadWordsJson().catch(cons
 toggleHighlightCheckbox?.addEventListener('change', (e) => onToggleCheckbox(e).catch(console.error))
 
 chrome.runtime.onMessage.addListener((message: Message) => {
-  if (message.event === 'update-word') {
+  if (message.event === 'update-words') {
     renderRecentlyWords().catch(console.error)
   }
 })

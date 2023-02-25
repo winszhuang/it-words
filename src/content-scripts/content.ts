@@ -1,6 +1,7 @@
+import { DataSetKey } from '@/enum'
 import { Message } from '@/types/type'
 import { getIsHighlight, getWordsData, pushWordData } from '@/utils/chrome/storage'
-import { translate } from '@/utils/google-translate'
+import { translate, TranslateResult } from '@/utils/google-translate'
 import { buildHighlightedWordEl } from '@/utils/scan-words'
 import { Button } from './button'
 
@@ -14,7 +15,6 @@ const button = new Button('儲存')
 document.addEventListener('mouseup', (e) => {
   currentWord = getSectionWord()
   if (currentWord) {
-    currentWord = currentWord.trim()
     button.show()
     button.setPosition(
       e.clientX + defaultXOffset,
@@ -32,7 +32,7 @@ document.addEventListener('click', (e) => {
 })
 
 button.onClick(async () => {
-  const translationData = await translate({ text: currentWord })
+  const translationData = await translate({ text: currentWord.trim().toLowerCase() })
   if (!translationData) {
     alert('fail to get translate data!!')
     return
@@ -49,6 +49,15 @@ chrome.runtime.onMessage.addListener(async (message: Message, sender, senderResp
       await highlightAllWords()
     } else {
       unHighlightAllWords()
+    }
+  } else if (message.event === 'update-words') {
+    const data = message.data as { operate: 'add' | 'delete', change: TranslateResult }
+    if (data.operate === 'add') {
+      console.log(`新增字彙${data.change.text}搂`)
+      buildHighlightedWordEl(data.change)
+    } else if (data.operate === 'delete') {
+      console.log(`刪除字彙${data.change.text}搂`)
+      unHighlightWords(data.change.text)
     }
   }
 })
@@ -89,8 +98,19 @@ async function highlightAllWords () {
 }
 
 function unHighlightAllWords () {
-  const nodeList = document.querySelectorAll('[data-word]')
+  const nodeList = document.querySelectorAll(`[${DataSetKey.word}]`)
   nodeList.forEach(node => {
+    const newNode = document.createTextNode(node.textContent || node.innerHTML)
+
+    node.parentElement?.replaceChild(newNode, node)
+  })
+}
+
+function unHighlightWords (word: string) {
+  const nodeList = document.querySelectorAll(`[${DataSetKey.word}]`)
+  const matchWordList = Array.from(nodeList)
+    .filter(node => node.getAttribute(DataSetKey.word)?.split(' $ ')[0] === word)
+  matchWordList.forEach(node => {
     const newNode = document.createTextNode(node.textContent || node.innerHTML)
 
     node.parentElement?.replaceChild(newNode, node)
