@@ -2,7 +2,17 @@ import { ElementBuilder } from './element-builder'
 import { TranslateResult } from './google-translate'
 import { generateRandomId, getAbsoluteCoords } from './helper'
 
+interface HoverOptions {
+  /** 翻譯字卡 */
+  translate?: boolean
+  /** 畫紅線單字 */
+  word?: boolean
+}
+
 const SIGN = 'data-word'
+/** 公差。確保說滑鼠從下划紅線移動到翻譯字卡可以順利讓翻譯字卡不會消失 */
+const TOLERANCE = 5
+const hoverState: Record<string, HoverOptions> = {}
 
 export function buildHighlightedWordEl (data: TranslateResult) {
   let { text } = data
@@ -30,8 +40,14 @@ export function buildHighlightedWordEl (data: TranslateResult) {
         const span = document.createElement('span')
         span.setAttribute(SIGN, `word:${nodeText}`)
         span.style.borderBottom = '1px solid red'
-        span.addEventListener('mouseenter', (e) => showPopup(span, data, id))
-        span.addEventListener('mouseleave', (e) => hidePopup(text, id))
+        span.addEventListener('mouseenter', () => {
+          updateHoverState(id, { word: true })
+          showPopup(span, data, id)
+        })
+        span.addEventListener('mouseleave', (e) => {
+          updateHoverState(id, { word: false })
+          hidePopup(text, id)
+        })
         span.appendChild(range.extractContents())
         range.insertNode(span)
 
@@ -72,28 +88,45 @@ async function showPopup (el: HTMLElement, translationData: TranslateResult, id:
     .getEl()
 
   const tooltip = new ElementBuilder('div')
-    .attribute('data-translate', generateDataTranslateValue(text, id))
-    .style('position', 'fixed')
     .style('boxShadow', 'rgba(0, 0, 0, 0.24) 0px 3px 8px')
     .style('padding', '4px')
     .style('backgroundColor', 'white')
     .appendChild(resultUl)
     .appendChild(document.createElement('hr'))
     .appendChild(detailedUl)
-    .dependsOn(document.body)
     .getEl()
 
+  const tooltipContainer = new ElementBuilder('div')
+    .attribute('data-translate', generateDataTranslateValue(text, id))
+    .style('position', 'fixed')
+    .style('paddingTop', `${TOLERANCE}px`)
+    .dependsOn(document.body)
+    .appendChild(tooltip)
+    .getEl()
+
+  tooltipContainer.addEventListener('mouseenter', () => {
+    updateHoverState(id, { translate: true })
+  })
+  tooltipContainer.addEventListener('mouseleave', () => {
+    updateHoverState(id, { translate: false })
+    hidePopup(text, id)
+  })
+
   const { x, y } = getAbsoluteCoords(el)
-  updateLocate(tooltip, x, y + el.getBoundingClientRect().height)
+  // 讓高度減掉公差，確保滑鼠還沒移出紅線單字前可以正常過度到翻譯字卡
+  updateLocate(tooltipContainer, x, y + el.getBoundingClientRect().height - TOLERANCE)
 
   document.addEventListener('scroll', () =>
-    updateLocate(tooltip, x, y + el.getBoundingClientRect().height))
+    updateLocate(tooltipContainer, x, y + el.getBoundingClientRect().height - TOLERANCE))
 }
 
 function hidePopup (text: string, id: string) {
   const elList = document.querySelectorAll(`[data-translate="${text} $ ${id}"]`)
-  if (elList.length) {
-    elList.forEach(el => {
+  if (!elList.length) return
+
+  const shouldNotBeHidden = hoverState[id]?.translate || hoverState[id]?.word
+  if (!shouldNotBeHidden) {
+    elList.forEach((el) => {
       el.remove()
     })
   }
@@ -118,6 +151,14 @@ function getTextNodesIn (node: Node) {
 function updateLocate (el: HTMLElement, x: number, y: number) {
   el.style.top = `${y + -1 * scrollY}px`
   el.style.left = `${x + -1 * scrollX}px`
+}
+
+function updateHoverState (id: string, options: HoverOptions) {
+  if (!hoverState[id]) {
+    hoverState[id] = {}
+  }
+
+  Object.assign(hoverState[id], options)
 }
 
 function generateDataTranslateValue (text: string, id: string) {
