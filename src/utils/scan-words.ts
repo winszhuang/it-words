@@ -42,11 +42,11 @@ export function buildHighlightedWordEl (data: TranslateResult) {
         span.style.borderBottom = '1px solid red'
         span.addEventListener('mouseenter', () => {
           updateHoverState(id, { word: true })
-          showPopup(span, data, id)
+          showTooltip(span, data, id)
         })
         span.addEventListener('mouseleave', (e) => {
           updateHoverState(id, { word: false })
-          hidePopup(text, id)
+          hideTooltip(text, id)
         })
         span.appendChild(range.extractContents())
         range.insertNode(span)
@@ -61,8 +61,14 @@ export function buildHighlightedWordEl (data: TranslateResult) {
   }
 }
 
-async function showPopup (el: HTMLElement, translationData: TranslateResult, id: string) {
+async function showTooltip (el: HTMLElement, translationData: TranslateResult, id: string) {
   const { detailed = [], result = [], text } = translationData
+
+  const existElList = document.querySelectorAll(`[data-translate="${text} $ ${id}"]`)
+  if (existElList.length) {
+    return
+  }
+
   const resultUl = new ElementBuilder('ul')
     .style('listStyle', 'none')
     .style('fontWeight', 'bold')
@@ -109,7 +115,7 @@ async function showPopup (el: HTMLElement, translationData: TranslateResult, id:
   })
   tooltipContainer.addEventListener('mouseleave', () => {
     updateHoverState(id, { translate: false })
-    hidePopup(text, id)
+    hideTooltip(text, id)
   })
 
   const { x, y } = getAbsoluteCoords(el)
@@ -120,7 +126,7 @@ async function showPopup (el: HTMLElement, translationData: TranslateResult, id:
     updateLocate(tooltipContainer, x, y + el.getBoundingClientRect().height - TOLERANCE))
 }
 
-function hidePopup (text: string, id: string) {
+function hideTooltip (text: string, id: string) {
   const elList = document.querySelectorAll(`[data-translate="${text} $ ${id}"]`)
   if (!elList.length) return
 
