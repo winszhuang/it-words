@@ -1,3 +1,5 @@
+import { TranslateResult } from './utils/google-translate'
+
 chrome.storage.local.onChanged.addListener(async (change) => {
   // use for testing
   console.log('此次storage的更新 : ')
@@ -12,9 +14,25 @@ chrome.storage.local.onChanged.addListener(async (change) => {
       })
     })
   } else if (change.words) {
-    chrome.runtime.sendMessage({
-      event: 'update-word',
-      data: true
+    const newArr = change.words.newValue as TranslateResult[]
+    const oldArr = change.words.oldValue as TranslateResult[]
+    const isAdd = newArr.length > oldArr.length
+    const data = {
+      operate: isAdd ? 'add' : 'delete',
+      change: isAdd
+        ? [...newArr].pop()
+        : [...oldArr].pop()
+    }
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach(tab => {
+        chrome.tabs.sendMessage(
+          tab.id!,
+          {
+            event: 'update-words',
+            data
+          }
+        )
+      })
     })
   }
 })

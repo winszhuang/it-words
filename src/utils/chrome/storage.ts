@@ -20,6 +20,11 @@ export async function pushWordData (translationData: TranslateResult) {
   await setWordsData([...words, translationData])
 }
 
+export async function deleteWordData (text: string) {
+  const words = await getWordsData()
+  await setWordsData(words.filter(item => item.text !== text))
+}
+
 export async function isActiveTabShouldHighlightWord () {
   const currentTabId = (await getActiveTab()).id!
   return await getIsHighlight(currentTabId)
