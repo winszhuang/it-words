@@ -2,7 +2,7 @@ import { DataSetKey } from '@/enum'
 import { Message } from '@/types/type'
 import { getIsHighlight, getWordsData, pushWordData } from '@/utils/chrome/storage'
 import { translate, TranslateResult } from '@/utils/google-translate'
-import { buildHighlightedWordEl } from '@/utils/scan-words'
+import { appendHighlight } from '@/utils/scan-words'
 import { Button } from './button'
 
 const defaultXOffset = 40
@@ -39,7 +39,7 @@ button.onClick(async () => {
   }
 
   await pushWordData(translationData)
-  buildHighlightedWordEl(translationData)
+  appendHighlight(translationData)
 })
 
 chrome.runtime.onMessage.addListener(async (message: Message, sender, senderResponse) => {
@@ -54,7 +54,7 @@ chrome.runtime.onMessage.addListener(async (message: Message, sender, senderResp
     const data = message.data as { operate: 'add' | 'delete', change: TranslateResult }
     if (data.operate === 'add') {
       console.log(`新增字彙${data.change.text}搂`)
-      buildHighlightedWordEl(data.change)
+      appendHighlight(data.change)
     } else if (data.operate === 'delete') {
       console.log(`刪除字彙${data.change.text}搂`)
       unHighlightWords(data.change.text)
@@ -93,7 +93,7 @@ async function initTabId (): Promise<number | undefined> {
 async function highlightAllWords () {
   const words = await getWordsData()
   words.forEach((wordData) => {
-    buildHighlightedWordEl(wordData)
+    appendHighlight(wordData)
   })
 }
 
