@@ -2,7 +2,7 @@ import { DataSetKey } from '@/enum'
 import { deleteWordData } from './chrome/storage'
 import { ElementBuilder } from './element-builder'
 import { TranslateResult } from './google-translate'
-import { generateRandomId, getAbsoluteCoords } from './helper'
+import { generateRandomId, getAbsoluteCoords, getStartEndIndexListByWord } from './helper'
 
 interface HoverOptions {
   /** 翻譯字卡 */
@@ -15,50 +15,36 @@ interface HoverOptions {
 const TOLERANCE = 5
 const hoverState: Record<string, HoverOptions> = {}
 
-export function buildHighlightedWordEl (data: TranslateResult) {
+export function appendHighlight (data: TranslateResult) {
   let { text } = data
   const textNodes = getTextNodesIn(document.body)
   text = text.toLowerCase()
   // 接著遍歷所有文字節點，看哪些節點的文字中有包含 "vue" 字樣
   for (const node of textNodes) {
     const nodeText = node.nodeValue?.toLowerCase() as string
-    if (!nodeText.includes(text)) {
-      continue
-    }
-    if (nodeText.includes('(function()')) {
-      continue
-    }
-    let startIndex = nodeText.indexOf(text)
+    if (!nodeText.includes(text)) continue
 
-    try {
-      while (startIndex !== -1) {
-        const id = generateRandomId()
-        // 如果找到了，則使用 Range 對該段文字創建一個新的節點，並把它加入到 body 的最後面
-        const range = document.createRange()
-        range.setStart(node, startIndex)
-        range.setEnd(node, startIndex + text.length)
+    const startEndIndexList = getStartEndIndexListByWord(nodeText, text)
+    startEndIndexList.forEach(o => {
+      const id = generateRandomId()
+      const range = document.createRange()
+      range.setStart(node, o.startIndex)
+      range.setEnd(node, o.endIndex)
 
-        const span = document.createElement('span')
-        span.setAttribute(DataSetKey.word, generateDataTranslateValue(text, id))
-        span.style.borderBottom = '1px solid red'
-        span.addEventListener('mouseenter', () => {
-          updateHoverState(id, { word: true })
-          showTooltip(span, data, id)
-        })
-        span.addEventListener('mouseleave', (e) => {
-          updateHoverState(id, { word: false })
-          hideTooltip(text, id)
-        })
-        span.appendChild(range.extractContents())
-        range.insertNode(span)
-
-        // 再次查找，看是否還有其他的 "vue" 字樣
-        startIndex = nodeText.indexOf(text, startIndex + 1)
-      }
-    } catch (error) {
-      console.log(error)
-      console.warn(`errorText is ${nodeText}`)
-    }
+      const span = document.createElement('span')
+      span.setAttribute(DataSetKey.word, generateDataTranslateValue(text, id))
+      span.style.borderBottom = '1px solid red'
+      span.addEventListener('mouseenter', () => {
+        updateHoverState(id, { word: true })
+        showTooltip(span, data, id)
+      })
+      span.addEventListener('mouseleave', (e) => {
+        updateHoverState(id, { word: false })
+        hideTooltip(text, id)
+      })
+      span.appendChild(range.extractContents())
+      range.insertNode(span)
+    })
   }
 }
 
