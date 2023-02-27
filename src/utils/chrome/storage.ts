@@ -39,3 +39,12 @@ export async function getIsHighlight (tabId: number) {
   const highlightData = highlight as Record<number, boolean>
   return highlightData[tabId]
 }
+
+export async function setCanSpeak (enable: boolean) {
+  await chrome.storage.local.set({ speak: enable })
+}
+
+export async function getCanSpeak () {
+  const { speak } = await chrome.storage.local.get('speak')
+  return speak as boolean
+}

@@ -1,5 +1,5 @@
 import { DataSetKey } from '@/enum'
-import { deleteWordData } from './chrome/storage'
+import { deleteWordData, getCanSpeak } from './chrome/storage'
 import { ElementBuilder } from './element-builder'
 import { TranslateResult } from './google-translate'
 import { generateRandomId, getAbsoluteCoords, getStartEndIndexListByWord } from './helper'
@@ -60,6 +60,10 @@ async function showTooltip (el: HTMLElement, translationData: TranslateResult, i
     .attribute(DataSetKey.translateDelete, id)
     .text('刪除')
     .getEl()
+  const speakButton = new ElementBuilder('button')
+    .attribute(DataSetKey.translateDelete, id)
+    .text('發音')
+    .getEl()
 
   const resultUl = new ElementBuilder('ul')
     .style('listStyle', 'none')
@@ -94,6 +98,7 @@ async function showTooltip (el: HTMLElement, translationData: TranslateResult, i
     .appendChild(detailedUl)
     .appendChild(document.createElement('hr'))
     .appendChild(deleteWordButton)
+    .appendChild(speakButton)
     .getEl()
 
   const tooltipContainer = new ElementBuilder('div')
@@ -113,6 +118,13 @@ async function showTooltip (el: HTMLElement, translationData: TranslateResult, i
   })
   deleteWordButton.addEventListener('click', () => {
     deleteWordData(text)
+  })
+  speakButton.addEventListener('click', async () => {
+    const canSpeak = await getCanSpeak()
+    if (!canSpeak) return
+
+    const msg = new SpeechSynthesisUtterance(text)
+    window.speechSynthesis.speak(msg)
   })
 
   const { x, y } = getAbsoluteCoords(el)

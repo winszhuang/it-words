@@ -34,6 +34,8 @@ chrome.storage.local.onChanged.addListener(async (change) => {
         )
       })
     })
+  } else if (change.speak) {
+    console.log('準備更新speak模式')
   }
 })
 
