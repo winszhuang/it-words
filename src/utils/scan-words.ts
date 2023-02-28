@@ -3,6 +3,7 @@ import { deleteWordData, getCanSpeak } from './chrome/storage'
 import { ElementBuilder } from './element-builder'
 import { TranslateResult } from './google-translate'
 import { generateRandomId, getAbsoluteCoords, getStartEndIndexListByWord } from './helper'
+import { useHoverCounter } from './hover-counter'
 
 interface HoverOptions {
   /** 翻譯字卡 */
@@ -31,14 +32,22 @@ export function appendHighlight (data: TranslateResult) {
       range.setStart(node, o.startIndex)
       range.setEnd(node, o.endIndex)
 
+      const { onMouseEnter, onMouseLeave } = useHoverCounter(200, async () => {
+        const canSpeak = await getCanSpeak()
+        if (!canSpeak) return
+        const msg = new SpeechSynthesisUtterance(text)
+        window.speechSynthesis.speak(msg)
+      })
       const span = document.createElement('span')
       span.setAttribute(DataSetKey.word, generateDataTranslateValue(text, id))
       span.style.borderBottom = '1px solid red'
       span.addEventListener('mouseenter', () => {
+        onMouseEnter()
         updateHoverState(id, { word: true })
         showTooltip(span, data, id)
       })
       span.addEventListener('mouseleave', (e) => {
+        onMouseLeave()
         updateHoverState(id, { word: false })
         hideTooltip(text, id)
       })
@@ -60,10 +69,12 @@ async function showTooltip (el: HTMLElement, translationData: TranslateResult, i
     .attribute(DataSetKey.translateDelete, id)
     .text('刪除')
     .getEl()
-  const speakButton = new ElementBuilder('button')
-    .attribute(DataSetKey.translateDelete, id)
-    .text('發音')
-    .getEl()
+  const speakButton = (await getCanSpeak())
+    ? new ElementBuilder('button')
+      .attribute(DataSetKey.translateDelete, id)
+      .text('發音')
+      .getEl()
+    : null
 
   const resultUl = new ElementBuilder('ul')
     .style('listStyle', 'none')
@@ -98,7 +109,7 @@ async function showTooltip (el: HTMLElement, translationData: TranslateResult, i
     .appendChild(detailedUl)
     .appendChild(document.createElement('hr'))
     .appendChild(deleteWordButton)
-    .appendChild(speakButton)
+    .appendChildIf(!!speakButton, speakButton!)
     .getEl()
 
   const tooltipContainer = new ElementBuilder('div')
@@ -116,10 +127,11 @@ async function showTooltip (el: HTMLElement, translationData: TranslateResult, i
     updateHoverState(id, { translate: false })
     hideTooltip(text, id)
   })
+
   deleteWordButton.addEventListener('click', () => {
     deleteWordData(text)
   })
-  speakButton.addEventListener('click', async () => {
+  speakButton?.addEventListener('click', async () => {
     const canSpeak = await getCanSpeak()
     if (!canSpeak) return
 

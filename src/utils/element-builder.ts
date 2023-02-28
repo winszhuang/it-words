@@ -33,6 +33,16 @@ export class ElementBuilder {
     return this
   }
 
+  appendChildIf<T extends Node> (
+    condition: boolean,
+    exprIFTrue: T
+  ) {
+    if (condition) {
+      this.el.appendChild(exprIFTrue)
+    }
+    return this
+  }
+
   appendChildEach<T extends Node, A> (list: A[], callback: (value: A) => T) {
     for (const el of list) {
       const toBeAppendEl = callback(el)
