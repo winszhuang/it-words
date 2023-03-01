@@ -5,14 +5,13 @@ import { translate, TranslateResult } from '@/utils/google-translate'
 import { appendHighlight } from '@/utils/scan-words'
 import { Button } from './button'
 
-const defaultXOffset = 40
-const defaultYOffset = 20
-
 let currentWord: string = ''
 
+const defaultXOffset = 40
+const defaultYOffset = 20
 const button = new Button('儲存')
 
-document.addEventListener('mouseup', (e) => {
+document.addEventListener('click', (e) => {
   currentWord = getSectionWord()
   if (currentWord) {
     button.show()
@@ -20,18 +19,17 @@ document.addEventListener('mouseup', (e) => {
       e.clientX + defaultXOffset,
       e.clientY + window.scrollY + defaultYOffset
     )
-  }
-})
-
-document.addEventListener('click', (e) => {
-  currentWord = getSectionWord()
-  if (!currentWord) {
+  } else {
     currentWord = ''
     button.hide()
   }
 })
 
-button.onClick(async () => {
+button.onClick(async (e) => {
+  e.stopPropagation()
+  button.hide()
+  window.getSelection()?.removeAllRanges()
+
   const translationData = await translate({ text: currentWord.trim().toLowerCase() })
   if (!translationData) {
     alert('fail to get translate data!!')
