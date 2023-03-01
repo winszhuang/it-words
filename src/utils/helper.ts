@@ -14,14 +14,14 @@ export function generateRandomId () {
 }
 
 export function isWordInSentence (sentence: string, word: string) {
-  const regex = new RegExp(`(?<=^|\\s)${word}(?=$|\\s)`, 'gm')
+  const regex = new RegExp(`(?<=^|\\s)${word}(?=$|\\s)`, 'gmi')
   return regex.exec(sentence)!!
 }
 
 export function getStartEndIndexListByWord (sentence: string, word: string) {
   let z: RegExpExecArray | null
   const list: Array<{ startIndex: number, endIndex: number }> = []
-  const regex = new RegExp(`(?<=^|\\s)${word}(?=$|\\s)`, 'gm')
+  const regex = new RegExp(`(?<=^|\\s)${word}(?=$|\\s)`, 'gmi')
 
   while ((z = regex.exec(sentence)) !== null) {
     list.push({ startIndex: z.index, endIndex: z.index + word.length })
