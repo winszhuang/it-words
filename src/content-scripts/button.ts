@@ -7,7 +7,7 @@ export class Button {
     this.el.style.position = absolute ? 'absolute' : 'relative'
     this.el.style.backgroundColor = 'white'
     this.el.style.border = '1px solid black'
-    this.hide()
+    this.el.style.zIndex = '9999999999'
   }
 
   public setPosition (x: number, y: number) {
@@ -21,6 +21,10 @@ export class Button {
 
   public hide () {
     this.el.style.display = 'none'
+  }
+
+  public remove () {
+    this.el.remove()
   }
 
   public onClick (callback: (e: MouseEvent) => void) {

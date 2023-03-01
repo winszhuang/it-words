@@ -79,6 +79,7 @@ async function showTooltip (el: HTMLElement, translationData: TranslateResult, i
   const tooltipContainer = new ElementBuilder('div')
     .attribute(DataSetKey.translate, generateDataTranslateValue(text, id))
     .style('position', 'fixed')
+    .style('zIndex', '9999999999')
     .style('paddingTop', `${TOLERANCE}px`)
     .dependsOn(document.body)
     .appendChild(tooltip)
