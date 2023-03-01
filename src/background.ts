@@ -21,7 +21,7 @@ chrome.storage.local.onChanged.addListener(async (change) => {
       operate: isAdd ? 'add' : 'delete',
       change: isAdd
         ? [...newArr].pop()
-        : [...oldArr].pop()
+        : diff(oldArr, newArr)[0]
     }
     chrome.tabs.query({}, (tabs) => {
       tabs.forEach(tab => {
@@ -50,6 +50,11 @@ function sendTabIdToContent (id: number) {
     event: 'get-tab-id',
     data: id
   })
+}
+
+function diff (bigArray: TranslateResult[], smallArray: TranslateResult[]) {
+  return bigArray
+    .filter(item => smallArray.map(i => i.text).indexOf(item.text) === -1)
 }
 
 // Extension event listeners are a little different from the patterns you may have seen in DOM or
