@@ -120,12 +120,16 @@ function getTextNodesIn (node: Node) {
 
   if (node.nodeName === 'STYLE' || node.nodeName === 'NOSCRIPT') {
     // nothing
+  } else if (node.nodeType === 1) {
+    const el = node as HTMLElement
+    const existHighlightEl = el.getAttribute(DataSetKey.word)
+    if (!existHighlightEl) {
+      for (const child of node.childNodes) {
+        textNodes.push(...getTextNodesIn(child))
+      }
+    }
   } else if (node.nodeType === 3) {
     textNodes.push(node)
-  } else if (node.nodeType === 1) {
-    for (const child of node.childNodes) {
-      textNodes.push(...getTextNodesIn(child))
-    }
   }
 
   return textNodes
