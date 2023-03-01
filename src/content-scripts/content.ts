@@ -92,9 +92,9 @@ async function initTabId (): Promise<number | undefined> {
 
 async function highlightAllWords () {
   const words = await getWordsData()
-  words.forEach((wordData) => {
+  for (const wordData of words) {
     appendHighlight(wordData)
-  })
+  }
 }
 
 function unHighlightAllWords () {

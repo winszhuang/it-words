@@ -2,7 +2,7 @@ import { DataSetKey } from '@/enum'
 import { deleteWordData } from './chrome/storage'
 import { ElementBuilder } from './element-builder'
 import { TranslateResult } from './google-translate'
-import { generateRandomId, getAbsoluteCoords, getStartEndIndexListByWord } from './helper'
+import { generateRandomId, getAbsoluteCoords, getStartEndIndexListByWord, isWordInSentence } from './helper'
 
 interface HoverOptions {
   /** 翻譯字卡 */
@@ -16,35 +16,15 @@ const TOLERANCE = 5
 const hoverState: Record<string, HoverOptions> = {}
 
 export function appendHighlight (data: TranslateResult) {
-  let { text } = data
+  const { text } = data
   const textNodes = getTextNodesIn(document.body)
-  text = text.toLowerCase()
-  // 接著遍歷所有文字節點，看哪些節點的文字中有包含 "vue" 字樣
   for (const node of textNodes) {
-    const nodeText = node.nodeValue?.toLowerCase() as string
-    if (!nodeText.includes(text)) continue
+    const nodeText = node.nodeValue as string
+    if (!isWordInSentence(nodeText, text)) continue
 
-    const startEndIndexList = getStartEndIndexListByWord(nodeText, text)
-    startEndIndexList.forEach(o => {
-      const id = generateRandomId()
-      const range = document.createRange()
-      range.setStart(node, o.startIndex)
-      range.setEnd(node, o.endIndex)
-
-      const span = document.createElement('span')
-      span.setAttribute(DataSetKey.word, generateDataTranslateValue(text, id))
-      span.style.borderBottom = '1px solid red'
-      span.addEventListener('mouseenter', () => {
-        updateHoverState(id, { word: true })
-        showTooltip(span, data, id)
-      })
-      span.addEventListener('mouseleave', (e) => {
-        updateHoverState(id, { word: false })
-        hideTooltip(text, id)
-      })
-      span.appendChild(range.extractContents())
-      range.insertNode(span)
-    })
+    const newNode = genNewNodeWithHighlight(nodeText, text)
+    registerListenerOnHighlightWord(newNode, data)
+    node.parentNode?.replaceChild(newNode, node)
   }
 }
 
@@ -166,4 +146,65 @@ function updateHoverState (id: string, options: HoverOptions) {
 
 function generateDataTranslateValue (text: string, id: string) {
   return `${text} $ ${id}`
+}
+
+function getIdByHighlightEl (el: HTMLElement) {
+  const str = el.getAttribute(DataSetKey.word)
+  return str?.split(' $ ')[1]
+}
+
+function genNewNodeWithHighlight (sentence: string, word: string) {
+  const container = document.createDocumentFragment()
+  const startEndIndexList = getStartEndIndexListByWord(sentence, word)
+
+  let count = 0
+  for (const [index, { startIndex, endIndex }] of startEndIndexList.entries()) {
+    const text = sentence.slice(count, startIndex)
+    const highlightText = sentence.slice(startIndex, endIndex)
+
+    const prefixTextNode = document.createTextNode(text)
+    const highlightNode = createHighlightTextNode(highlightText)
+
+    container.appendChild(prefixTextNode)
+    container.appendChild(highlightNode)
+    count = endIndex
+
+    // 最後一圈，需要把尾段文字補上
+    if (index === startEndIndexList.length - 1) {
+      const suffixText = sentence.slice(endIndex, sentence.length)
+      const suffixTextNode = document.createTextNode(suffixText)
+      container.appendChild(suffixTextNode)
+    }
+  }
+  return container
+}
+
+function createHighlightTextNode (word: string) {
+  const id = generateRandomId()
+  const span = document.createElement('span')
+  span.innerText = word
+  span.setAttribute(DataSetKey.word, generateDataTranslateValue(word, id))
+  span.style.borderBottom = '1px solid red'
+  return span
+}
+
+function registerListenerOnHighlightWord (node: Node, data: TranslateResult) {
+  const { text } = data
+  node.childNodes.forEach(n => {
+    if (n.nodeType === 1) {
+      const span = n as HTMLSpanElement
+      const id = getIdByHighlightEl(span)
+      if (!id) {
+        throw new Error(`${id} is not exist!!`)
+      }
+      span.addEventListener('mouseenter', () => {
+        updateHoverState(id, { word: true })
+        showTooltip(span, data, id)
+      })
+      span.addEventListener('mouseleave', (e) => {
+        updateHoverState(id, { word: false })
+        hideTooltip(text, id)
+      })
+    }
+  })
 }
