@@ -31,7 +31,7 @@ export function appendHighlight (data: TranslateResult) {
 async function showTooltip (el: HTMLElement, translationData: TranslateResult, id: string) {
   const { detailed = [], result = [], text } = translationData
 
-  const existElList = document.querySelectorAll(`[${DataSetKey.translate}="${text} $ ${id}"]`)
+  const existElList = document.querySelectorAll(`[${DataSetKey.translate}="${text.toLowerCase()} $ ${id}"]`)
   if (existElList.length) {
     return
   }
@@ -79,6 +79,7 @@ async function showTooltip (el: HTMLElement, translationData: TranslateResult, i
   const tooltipContainer = new ElementBuilder('div')
     .attribute(DataSetKey.translate, generateDataTranslateValue(text, id))
     .style('position', 'fixed')
+    .style('zIndex', '9999999999')
     .style('paddingTop', `${TOLERANCE}px`)
     .dependsOn(document.body)
     .appendChild(tooltip)
@@ -149,7 +150,7 @@ function updateHoverState (id: string, options: HoverOptions) {
 }
 
 function generateDataTranslateValue (text: string, id: string) {
-  return `${text} $ ${id}`
+  return `${text.toLowerCase()} $ ${id}`
 }
 
 function getIdByHighlightEl (el: HTMLElement) {

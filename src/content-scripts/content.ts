@@ -5,41 +5,25 @@ import { translate, TranslateResult } from '@/utils/google-translate'
 import { appendHighlight } from '@/utils/scan-words'
 import { Button } from './button'
 
+let currentWord: string = ''
+let currentButton: Button
 const defaultXOffset = 40
 const defaultYOffset = 20
 
-let currentWord: string = ''
-
-const button = new Button('儲存')
-
-document.addEventListener('mouseup', (e) => {
+document.addEventListener('click', (e) => {
   currentWord = getSectionWord()
+  // #TODO 排除掉有不是一般單字的特殊字眼
   if (currentWord) {
-    button.show()
-    button.setPosition(
+    currentButton = new Button('儲存')
+    currentButton.onClick(handleButtonClick)
+    currentButton.setPosition(
       e.clientX + defaultXOffset,
       e.clientY + window.scrollY + defaultYOffset
     )
-  }
-})
-
-document.addEventListener('click', (e) => {
-  currentWord = getSectionWord()
-  if (!currentWord) {
+  } else {
     currentWord = ''
-    button.hide()
+    currentButton?.remove()
   }
-})
-
-button.onClick(async () => {
-  const translationData = await translate({ text: currentWord.trim().toLowerCase() })
-  if (!translationData) {
-    alert('fail to get translate data!!')
-    return
-  }
-
-  await pushWordData(translationData)
-  appendHighlight(translationData)
 })
 
 chrome.runtime.onMessage.addListener(async (message: Message, sender, senderResponse) => {
@@ -61,6 +45,21 @@ chrome.runtime.onMessage.addListener(async (message: Message, sender, senderResp
     }
   }
 })
+
+async function handleButtonClick (e: MouseEvent) {
+  e.stopPropagation()
+  window.getSelection()?.removeAllRanges()
+
+  const translationData = await translate({ text: currentWord.trim().toLowerCase() })
+  if (!translationData) {
+    alert('fail to get translate data!!')
+    return
+  }
+
+  await pushWordData(translationData)
+  appendHighlight(translationData)
+  currentButton?.remove()
+}
 
 function getSectionWord () {
   return window?.getSelection()?.toString() || ''
