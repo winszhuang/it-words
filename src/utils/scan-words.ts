@@ -15,9 +15,9 @@ interface HoverOptions {
 const TOLERANCE = 5
 const hoverState: Record<string, HoverOptions> = {}
 
-export function appendHighlight (data: TranslateResult) {
+export function appendHighlight (data: TranslateResult, appendRootEl = document.body) {
   const { text } = data
-  const textNodes = getTextNodesIn(document.body)
+  const textNodes = getTextNodesIn(appendRootEl)
   for (const node of textNodes) {
     const nodeText = node.nodeValue as string
     if (!isWordInSentence(nodeText, text)) continue

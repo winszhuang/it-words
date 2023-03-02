@@ -1,12 +1,42 @@
 import { DataSetKey } from '@/enum'
 import { Message } from '@/types/type'
 import { getIsHighlight, getWordsData, pushWordData } from '@/utils/chrome/storage'
+import { debounce } from '@/utils/debounce'
 import { translate, TranslateResult } from '@/utils/google-translate'
 import { appendHighlight } from '@/utils/scan-words'
 import { Button } from './button'
 
 let currentWord: string = ''
 let currentButton: Button
+
+const highlightAfterMutation = debounce(1000, (target: HTMLElement) => highlightAllWords())
+
+new MutationObserver((mutations, observer) => {
+  mutations.forEach(mutation => {
+    const node = mutation.target
+    const isEl = node.nodeType === 1
+    if (!isEl) return
+
+    const targetEl = node as HTMLElement
+    // 如果變更到的是body就不處理
+    if (targetEl.tagName === 'BODY' || targetEl.tagName === 'SCRIPT') {
+      return
+    }
+
+    // 當前變更的元素
+    const target = mutation.target as HTMLElement
+
+    // #TODO 你要怎麼知道當前抓到的元素他剛好是更新畫面組件的最外層?
+    highlightAfterMutation(target)
+  })
+
+  // check(observer)
+}).observe(document.body, {
+  childList: true,
+  subtree: true,
+  characterData: true,
+  characterDataOldValue: true
+})
 
 document.addEventListener('click', (e) => {
   currentWord = getSectionWord()
@@ -38,6 +68,24 @@ chrome.runtime.onMessage.addListener(async (message: Message, sender, senderResp
     }
   }
 })
+
+// let check = (ob: MutationObserver) => {
+//   let count = 0
+//   setInterval(() => {
+
+//   })
+
+//   check = (ob: MutationObserver) {
+
+//   }
+//   // 確定執行完所有事情才到這
+//   if (!ob.takeRecords().length) {
+//     setTimeout(() => {
+
+//     }, 500)
+//     console.log('執行完所有東西瞜')
+//   }
+// }
 
 function bootButton () {
   if (!currentButton) {
@@ -98,10 +146,10 @@ async function initTabId (): Promise<number | undefined> {
   })
 }
 
-async function highlightAllWords () {
+async function highlightAllWords (appendRootEl = document.body) {
   const words = await getWordsData()
   for (const wordData of words) {
-    appendHighlight(wordData)
+    appendHighlight(wordData, appendRootEl)
   }
 }
 
