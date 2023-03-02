@@ -7,22 +7,15 @@ import { Button } from './button'
 
 let currentWord: string = ''
 let currentButton: Button
-const defaultXOffset = 40
-const defaultYOffset = 20
 
 document.addEventListener('click', (e) => {
   currentWord = getSectionWord()
-  // #TODO 排除掉有不是一般單字的特殊字眼
-  if (currentWord) {
-    currentButton = new Button('儲存')
-    currentButton.onClick(handleButtonClick)
-    currentButton.setPosition(
-      e.clientX + defaultXOffset,
-      e.clientY + window.scrollY + defaultYOffset
-    )
+
+  if (currentWord && hasWord(currentWord)) {
+    bootButton()
   } else {
     currentWord = ''
-    currentButton?.remove()
+    currentButton?.hide()
   }
 })
 
@@ -46,6 +39,18 @@ chrome.runtime.onMessage.addListener(async (message: Message, sender, senderResp
   }
 })
 
+function bootButton () {
+  if (!currentButton) {
+    currentButton = new Button('儲存')
+    currentButton.onClick(handleButtonClick)
+  }
+
+  const range = window?.getSelection()!.getRangeAt(0)
+  const { left, top, width, height } = range.getBoundingClientRect()
+  currentButton.setPosition(left + width, top + window.scrollY + height)
+  currentButton.show()
+}
+
 async function handleButtonClick (e: MouseEvent) {
   e.stopPropagation()
   window.getSelection()?.removeAllRanges()
@@ -58,11 +63,15 @@ async function handleButtonClick (e: MouseEvent) {
 
   await pushWordData(translationData)
   appendHighlight(translationData)
-  currentButton?.remove()
+  currentButton?.hide()
 }
 
 function getSectionWord () {
   return window?.getSelection()?.toString() || ''
+}
+
+function hasWord (selection: string) {
+  return !!selection.match(/[a-zA-Z]/)
 }
 
 async function init () {
